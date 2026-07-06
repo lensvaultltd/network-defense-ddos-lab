@@ -1,0 +1,78 @@
+version: '3.8'
+
+services:
+  # The Target Cloud Service
+  victim-app:
+    build: ./victim
+    expose:
+      - "3000"
+    networks:
+      - cloud_net
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 256M
+
+  # Mitigation Layer 1: Nginx Rate Limiting & Filtering
+  traffic-filter:
+    image: nginx:alpine
+    volumes:
+      - ./mitigation/rate_limit/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "80:80"
+    depends_on:
+      - load-balancer
+    networks:
+      - public_net
+      - cloud_net
+
+  # Mitigation Layer 2: HAProxy Load Balancer
+  load-balancer:
+    image: haproxy:2.3
+    volumes:
+      - ./mitigation/haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    expose:
+      - "80"
+    depends_on:
+      - victim-app
+    networks:
+      - cloud_net
+
+  # The Attack Simulator
+  attacker:
+    build: ./attacker
+    networks:
+      - public_net
+    command: tail -f /dev/null # Keep alive for manual exec
+
+  # Monitoring: Prometheus
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    expose:
+      - "9090"
+    networks:
+      - cloud_net
+
+  # Monitoring: Grafana
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    depends_on:
+      - prometheus
+    networks:
+      - cloud_net
+
+networks:
+  public_net:
+  cloud_net:
+    internal: true

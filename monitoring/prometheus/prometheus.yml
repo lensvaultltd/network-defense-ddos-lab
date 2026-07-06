@@ -1,0 +1,7 @@
+global:
+  scrape_interval: 5s
+
+scrape_configs:
+  - job_name: 'cloud-service'
+    static_configs:
+      - targets: ['victim-app:3000']

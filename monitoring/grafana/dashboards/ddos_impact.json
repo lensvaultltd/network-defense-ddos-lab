@@ -1,0 +1,37 @@
+{
+  "title": "DDoS Impact Evaluation",
+  "panels": [
+    {
+      "title": "Service Latency (Response Time)",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "rate(http_request_duration_ms_sum[1m]) / rate(http_request_duration_ms_count[1m])",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "CPU Utilization (Resource Exhaustion)",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "process_cpu_user_seconds_total",
+          "refId": "A"
+        }
+      ]
+    }
+  ]
+}
